@@ -1,5 +1,9 @@
 # Whyline
 
+![npm](https://img.shields.io/npm/v/whyline)
+![license](https://img.shields.io/github/license/malinda1986/whyline)
+![build](https://img.shields.io/github/actions/workflow/status/malinda1986/whyline/ci.yml)
+
 Local-first memory for AI coding sessions.
 
 > Git remembers what changed. Whyline remembers why.
