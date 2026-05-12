@@ -1,0 +1,12 @@
+import type Database from "better-sqlite3";
+import type { CodingMemory } from "./types.js";
+export declare function generateMemoryId(): string;
+export declare function buildEmbeddingText(memory: Pick<CodingMemory, "intent" | "summary" | "decision" | "why" | "alternativesRejected" | "risks" | "followUps" | "tags" | "files" | "commitSha">): string;
+export declare function saveMemory(db: Database.Database, memory: CodingMemory): void;
+export declare function getMemoryById(db: Database.Database, id: string): CodingMemory | null;
+export declare function getMemoryByCommit(db: Database.Database, commitSha: string): CodingMemory | null;
+export declare function getMemoriesByCommit(db: Database.Database, commitSha: string): CodingMemory[];
+export declare function getMemoriesByFile(db: Database.Database, repoId: string | null, filePath: string, limit: number): CodingMemory[];
+export declare function getAllMemories(db: Database.Database): CodingMemory[];
+export declare function getMemoriesByRepoId(db: Database.Database, repoId: string): CodingMemory[];
+export declare function getMemoriesByRepoPath(db: Database.Database, repoPath: string): CodingMemory[];

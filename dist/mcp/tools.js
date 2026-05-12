@@ -1,0 +1,35 @@
+import { z } from "zod";
+export const SearchMemoryInput = z.object({
+    repoPath: z.string().optional(),
+    repoId: z.string().optional(),
+    query: z.string(),
+    files: z.array(z.string()).optional(),
+    limit: z.number().int().positive().default(10),
+});
+export const SaveMemoryInput = z.object({
+    repoPath: z.string().optional(),
+    commitSha: z.string().optional(),
+    files: z.array(z.string()),
+    task: z.string().optional(),
+    intent: z.string(),
+    summary: z.string(),
+    decision: z.string(),
+    why: z.string(),
+    alternativesRejected: z.array(z.string()).default([]),
+    risks: z.array(z.string()).default([]),
+    followUps: z.array(z.string()).default([]),
+    tags: z.array(z.string()).default([]),
+    source: z.enum(["manual", "claude-code", "cli", "hook"]).default("claude-code"),
+});
+export const GetCommitMemoryInput = z.object({
+    repoPath: z.string().optional(),
+    repoId: z.string().optional(),
+    commitSha: z.string(),
+});
+export const GetFileMemoriesInput = z.object({
+    repoPath: z.string().optional(),
+    repoId: z.string().optional(),
+    filePath: z.string(),
+    limit: z.number().int().positive().default(10),
+});
+//# sourceMappingURL=tools.js.map
