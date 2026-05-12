@@ -1,11 +1,33 @@
 {
   "name": "whyline",
   "version": "0.1.0",
-  "description": "Local-first memory for AI coding sessions",
+  "description": "Local-first MCP memory for AI coding sessions. Git remembers what changed; Whyline remembers why.",
+  "keywords": [
+    "mcp",
+    "claude-code",
+    "ai-coding",
+    "coding-agent",
+    "developer-tools",
+    "git",
+    "sqlite",
+    "local-first",
+    "ai-memory",
+    "llm",
+    "cli"
+  ],
   "type": "module",
   "bin": {
     "whyline": "./dist/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/malinda1986/whyline.git"
+  },
+  "homepage": "https://github.com/malinda1986/whyline#readme",
+  "bugs": {
+    "url": "https://github.com/malinda1986/whyline/issues"
+  },
+  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
