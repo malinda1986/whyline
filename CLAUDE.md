@@ -1,14 +1,14 @@
-# Claude Instructions for coding-memory
+# Claude Instructions for Whyline
 
-You are building a local-first tool called `coding-memory`.
+You are working on `whyline` — a local-first CLI + MCP server that stores AI coding-session reasoning in SQLite and exposes it to Claude Code.
 
-The product stores AI coding-session reasoning outside the git repo and exposes it back to Claude Code through an MCP server.
+The MVP is complete. All 7 milestones are built and 72 tests pass.
 
 ## Build principles
 
 - Prefer simple local-first implementation.
-- Do not build hosted sync in MVP.
-- Do not build a UI in MVP.
+- Do not build hosted sync unless explicitly asked.
+- Do not build a UI unless explicitly asked.
 - Do not store raw transcripts by default.
 - Always redact secrets before saving memory.
 - Keep the CLI useful without MCP.
@@ -18,40 +18,28 @@ The product stores AI coding-session reasoning outside the git repo and exposes 
 - Use ESM (`"type": "module"`). All imports must use `.js` extensions even for `.ts` source files.
 - `better-sqlite3` is synchronous — do not use async/await in the DB layer.
 
-## MVP acceptance criteria
+## What not to build
 
-The user can:
-
-1. Run `coding-memory init`.
-2. Run `coding-memory save --commit HEAD --summary-file memory.md`.
-3. Run `coding-memory search "some query"`.
-4. Run `coding-memory show <id>`.
-5. Run `coding-memory mcp`.
-6. Configure Claude Code to use the MCP server.
-7. Ask Claude Code to search previous coding memories.
-
-## Implementation order
-
-1. Project setup.
-2. SQLite schema and migrations.
-3. Git repo detection helpers.
-4. Save command (parse markdown, redact secrets, store).
-5. Search and show commands.
-6. MCP server (4 tools).
-7. Skill file, CLAUDE.md, hook sample, README.
-8. Tests.
-
-## Do not overbuild
-
-Avoid:
-
-- cloud auth
-- team sharing
-- hosted vector DB
-- web UI
-- complex embeddings
-- PR integrations
-- background daemons
+- Cloud auth or team sharing
+- Hosted vector DB or embeddings service
+- Web UI
+- Background daemons
 - `--manual` interactive mode (deferred to v0.2)
+- PR integrations (deferred to v0.6)
 
-Build the smallest working local tool first.
+## Schema changes
+
+Any change to the database schema must be added as a new entry in `src/db/schema.ts` `MIGRATIONS[]` array with an incremented version number. Never modify existing migration SQL.
+
+## Adding a new CLI command
+
+1. Create `src/commands/<name>.ts` with a `run<Name>()` export.
+2. Register it in `src/cli.ts`.
+3. Add tests in `tests/<name>.test.ts` using in-memory SQLite.
+
+## Adding a new MCP tool
+
+1. Add a Zod schema to `src/mcp/tools.ts`.
+2. Add the tool descriptor to the `ListToolsRequestSchema` handler in `src/mcp/server.ts`.
+3. Add the `CallToolRequestSchema` case in `src/mcp/server.ts`.
+4. Run `redactSecrets()` on any user-supplied text before saving.

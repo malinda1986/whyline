@@ -2,7 +2,7 @@ import os from "os";
 import path from "path";
 import fs from "fs";
 
-export const DATA_DIR = path.join(os.homedir(), ".coding-memory");
+export const DATA_DIR = path.join(os.homedir(), ".whyline");
 export const DB_PATH = path.join(DATA_DIR, "memory.db");
 export const CONFIG_PATH = path.join(DATA_DIR, "config.json");
 

@@ -1,10 +1,32 @@
-# coding-memory
+# Whyline
 
 Local-first memory for AI coding sessions.
 
-> Git remembers what changed. `coding-memory` remembers why it changed.
+> Git remembers what changed. Whyline remembers why.
 
-`coding-memory` stores concise engineering reasoning outside the git repository and exposes it back to Claude Code through an MCP server. During a coding session you discuss why a design was chosen, what was rejected, known risks, and follow-up work. Git preserves the diff; `coding-memory` preserves the reasoning.
+---
+
+## Why this exists
+
+You've been there. You open a file, see a decision made months ago, and have no idea why. The diff shows *what* changed. The commit message says "fix retention logic." But why 90 days? Why a background job and not a cron? Why not S3?
+
+That context lived in a conversation — and it's gone.
+
+AI coding sessions with tools like Claude produce something valuable beyond the code: the reasoning behind it. The intent, the tradeoffs, the alternatives that were rejected, the risks that were acknowledged. None of that ends up in git. It lives in a chat window and disappears when the context resets.
+
+Whyline captures it.
+
+After each coding session, it stores a concise reasoning record in SQLite on your machine — no cloud, no auth, no new workflow. When you start a new session touching the same files, Claude searches those records automatically and surfaces the relevant context:
+
+> _"Last time we touched this file, we rejected S3 archival because of cost. Still the case?"_
+
+The loop is tight:
+
+- **Start a task** → Claude searches past memories and brings forward relevant decisions
+- **Finish and commit** → Claude synthesizes the session and saves the reasoning automatically
+- **Come back later** → The why is right there, not lost in a chat history
+
+It works through Claude Code's MCP protocol. Two files to set it up in any repo: `.mcp.json` and `CLAUDE.md`.
 
 ---
 
@@ -12,7 +34,7 @@ Local-first memory for AI coding sessions.
 
 ```bash
 git clone <repo>
-cd coding-memory
+cd whyline
 npm install
 npm run build
 npm link
@@ -33,10 +55,10 @@ npm rebuild better-sqlite3
 ### 1. Initialize
 
 ```bash
-coding-memory init
+whyline init
 ```
 
-Creates `~/.coding-memory/` with `memory.db` and `config.json`.
+Creates `~/.whyline/` with `memory.db` and `config.json`.
 
 ### 2. Create a memory summary file
 
@@ -78,12 +100,12 @@ Tags:
 ### 3. Save a memory
 
 ```bash
-coding-memory save --commit HEAD --summary-file memory.md
+whyline save --commit HEAD --summary-file memory.md
 ```
 
 Output:
 ```
-Saved coding memory mem_lzfg9vk3a1b2c3d4
+Saved memory mem_abc12345
 Repo: my-app
 Commit: abc12345
 Files: 3
@@ -92,35 +114,35 @@ Files: 3
 ### 4. Search memories
 
 ```bash
-coding-memory search "why optimistic comments?"
-coding-memory search "refresh token" --file src/auth/session.ts
-coding-memory search "checkout validation" --limit 5
+whyline search "why optimistic comments?"
+whyline search "refresh token" --file src/auth/session.ts
+whyline search "checkout validation" --limit 5
 ```
 
 ### 5. Show a memory
 
 ```bash
-coding-memory show mem_lzfg9vk3a1b2c3d4
-coding-memory show --commit abc12345
+whyline show mem_abc12345
+whyline show --commit abc12345
 ```
 
 ### 6. Start MCP server
 
 ```bash
-coding-memory mcp
+whyline mcp
 ```
 
 ---
 
 ## Configure Claude Code
 
-Add to your `.claude/settings.json` (project-level) or `~/.claude/settings.json` (global):
+Add `.mcp.json` to your repo root:
 
 ```json
 {
   "mcpServers": {
-    "coding-memory": {
-      "command": "coding-memory",
+    "whyline": {
+      "command": "whyline",
       "args": ["mcp"]
     }
   }
@@ -203,7 +225,7 @@ npm run lint                  # eslint
 
 ## Storage
 
-All data is stored locally at `~/.coding-memory/memory.db` (SQLite). The repository is never modified unless you explicitly install the post-commit hook.
+All data is stored locally at `~/.whyline/memory.db` (SQLite). The repository is never modified unless you explicitly install the post-commit hook.
 
 ---
 

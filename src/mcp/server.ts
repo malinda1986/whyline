@@ -38,7 +38,7 @@ function resolveRepoId(repoPath?: string, repoId?: string): string | undefined {
 
 export async function createMcpServer(): Promise<void> {
   const server = new Server(
-    { name: "coding-memory", version: "0.1.0" },
+    { name: "whyline", version: "0.1.0" },
     { capabilities: { tools: {} } }
   );
 

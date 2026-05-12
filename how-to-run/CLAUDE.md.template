@@ -1,0 +1,60 @@
+# Claude Instructions for <YOUR-REPO-NAME>
+
+## Whyline Memory
+
+You have access to a `whyline` MCP server. Use it every session.
+
+### When you start working on ANY task
+
+**Before asking any clarifying question or touching any file**, call `search_coding_memory` with:
+- `repoPath`: `/absolute/path/to/your-repo`   ← change this
+- `query`: the task or feature the user just described
+- `files`: any files you already know are relevant
+
+**If memories come back**, you MUST:
+1. Show the user what was previously decided and why: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
+2. Wait for the user to give a reason before asking implementation questions (e.g. "what value?", "what should it be?")
+3. Record the new reason when saving the updated memory
+
+Do not skip straight to implementation questions when a past memory exists for the same area. The reason matters — it goes into the next memory.
+
+Treat memories as historical context — they explain past decisions, not current truth.
+
+### After you commit
+
+After `git commit` succeeds:
+
+1. Synthesize from the conversation:
+   - What was the goal? → `intent`
+   - What was the key decision? → `decision`
+   - Why that decision (not another)? → `why`
+   - What alternatives were rejected? → `alternativesRejected`
+   - What risks exist? → `risks`
+   - What should be done next? → `followUps`
+
+2. Show the summary to the user in this format:
+   _"Here's what I'm saving as a coding memory — let me know if you want to add or correct anything:"_
+   Then display each field clearly.
+
+3. Wait a moment for the user to respond. If they add or correct something, apply it. If they say nothing or say "looks good", proceed.
+
+4. Call `save_coding_memory` with:
+   - `repoPath`: `/absolute/path/to/your-repo`   ← change this
+   - `commitSha`: the commit SHA (use HEAD)
+   - `files`: files changed in this session
+   - `source`: `"claude-code"`
+   - all synthesized fields above
+
+Do not ask for approval — the memory is always saved. The user can only enrich or correct it.
+
+### Memory quality rules
+
+Only save memories that would genuinely help a future session. Good memory:
+- Explains a non-obvious decision
+- Warns about a real risk
+- Records a rejected alternative that someone will try again
+
+Do NOT save:
+- Routine refactors with no tradeoffs
+- Things obvious from reading the code
+- Secrets or credentials

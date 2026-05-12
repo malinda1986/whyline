@@ -27,5 +27,5 @@ export function runInit(options: InitOptions = {}): void {
   runMigrations(db);
   db.close();
 
-  console.log(`Initialized coding-memory at ${dataDir}`);
+  console.log(`Initialized whyline at ${dataDir}`);
 }

@@ -5,11 +5,11 @@ import { runInit } from "./commands/init.js";
 const program = new Command();
 
 program
-  .name("coding-memory")
+  .name("whyline")
   .description("Local-first memory for AI coding sessions")
   .version("0.1.0");
 
-program.command("init").description("Initialize coding-memory storage").action(() => runInit());
+program.command("init").description("Initialize whyline storage").action(() => runInit());
 
 program
   .command("save")

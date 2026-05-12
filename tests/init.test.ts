@@ -6,7 +6,7 @@ import { runInit } from "../src/commands/init.js";
 import { openDb } from "../src/db/connection.js";
 
 function makeTempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), "coding-memory-test-"));
+  return fs.mkdtempSync(path.join(os.tmpdir(), "whyline-test-"));
 }
 
 describe("init command", () => {
