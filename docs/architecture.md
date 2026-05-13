@@ -26,7 +26,7 @@ sequenceDiagram
     Dev->>CC: "Add retention policy for audit logs"
     CC->>MCP: search_coding_memory(query, repoPath, files)
     MCP->>DB: query memories by keyword + repo
-    DB-->>MCP: ranked results with relevanceReason
+    DB-->>MCP: ranked results with relevanceReason + isStale flag
     MCP-->>CC: past decisions surfaced
     CC-->>Dev: "Last time we touched this, we chose X because Y. Still the case?"
 
@@ -39,7 +39,7 @@ sequenceDiagram
     CC->>MCP: save_coding_memory(intent, decision, why, files, commitSha, ...)
     MCP->>DB: INSERT memory + junction tables
     DB-->>MCP: saved
-    MCP-->>CC: { id, saved: true }
+    MCP-->>CC: { id, saved: true, warnings[] }
 ```
 
 ---
@@ -53,6 +53,15 @@ graph TB
         save[save]
         search[search]
         show[show]
+        list[list]
+        delete[delete]
+        stats[stats]
+        edit[edit]
+        export[export]
+        import[import]
+        summarize[summarize]
+        doctor[doctor]
+        install[install-claude]
         mcp_cmd[mcp]
     end
 
@@ -61,13 +70,16 @@ graph TB
         save_tool[save_coding_memory]
         commit_tool[get_commit_memory]
         file_tool[get_file_memories]
+        recent_tool[get_recent_memories]
     end
 
     subgraph Memory["Memory Layer"]
         parseSummary[parseSummary\nmarkdown → structured]
         redact[redactSecrets\nscans all text fields]
         saveMemory[saveMemory\ndb.transaction]
-        searchMemory[searchMemory\nkeyword scoring]
+        searchMemory[searchMemory\nkeyword scoring + isStale]
+        qualityCheck[qualityCheck\nwarnings on save]
+        summarizeCmd[Claude API\nfield improvement]
     end
 
     subgraph Git["Git Helpers"]
@@ -92,12 +104,16 @@ graph TB
 
     search --> searchMemory
     show --> saveMemory
+    summarize --> summarizeCmd
+    summarize --> saveMemory
 
     save_tool --> redact
     save_tool --> saveMemory
+    save_tool --> qualityCheck
     search_tool --> searchMemory
     commit_tool --> saveMemory
     file_tool --> saveMemory
+    recent_tool --> saveMemory
 
     saveMemory --> memories
     saveMemory --> files
@@ -181,8 +197,9 @@ flowchart LR
     A[Raw input\nmarkdown or MCP fields] --> B[parseSummary\nextract structured fields]
     B --> C[redactSecrets\nreplace tokens / keys / PEM blocks]
     C --> D[buildEmbeddingText\nconcatenate all fields]
-    D --> E[saveMemory\ndb.transaction INSERT]
-    E --> F[(SQLite)]
+    D --> E[qualityCheck\nwarn if fields too short or filler]
+    E --> F[saveMemory\ndb.transaction INSERT]
+    F --> G[(SQLite)]
 ```
 
 **Secret patterns redacted:**
@@ -197,7 +214,7 @@ flowchart LR
 
 ## Search pipeline
 
-Search is deterministic keyword scoring — no embeddings, no external service.
+Search is deterministic keyword scoring — no embeddings, no external service. Results include an `isStale` flag for memories older than 90 days.
 
 ```mermaid
 flowchart TD
@@ -205,16 +222,18 @@ flowchart TD
     B --> C{repo_id results?}
     C -- yes --> D[fetch memories by repo_id]
     C -- no --> E[fallback: fetch by repo_path LIKE]
-    D --> F[scoreMemory for each result]
+    D --> F[apply date + tag filters]
     E --> F
-    F --> G{query provided?}
-    G -- yes --> H{contentScore > 0?}
-    H -- yes --> I[keep result]
-    H -- no --> J[discard — same-repo bonus alone not enough]
-    G -- no --> I
-    I --> K[sort by total score desc]
-    K --> L[limit results]
-    L --> M[explainRelevance → relevanceReason string]
+    F --> G[scoreMemory for each result]
+    G --> H{query provided?}
+    H -- yes --> I{contentScore > 0?}
+    I -- yes --> J[keep result]
+    I -- no --> K[discard — same-repo bonus alone not enough]
+    H -- no --> J
+    J --> L[sort by total score desc]
+    L --> M[limit results]
+    M --> N[explainRelevance → relevanceReason]
+    N --> O[isStale: age > 90 days]
 ```
 
 **Score weights:**
@@ -230,7 +249,28 @@ flowchart TD
 | File path match | +2 |
 | Recency (≤30 days) | +1 |
 
-The `relevanceReason` field in search results describes which components fired, e.g. `"Matched: same repo (+10), tag match (+5), decision match (+4)"`.
+The `relevanceReason` field describes which components fired, e.g. `"Matched: same repo (+10), tag match (+5)"`. The `isStale` flag is set for memories older than 90 days — Claude surfaces a verification prompt when it's true.
+
+---
+
+## Summarize pipeline
+
+`whyline summarize <id>` improves a saved memory's text quality using the Claude API.
+
+```mermaid
+flowchart LR
+    A[memory ID] --> B[load from SQLite]
+    B --> C[build prompt\nwith all 8 text fields]
+    C --> D[call claude-haiku\nvia HTTPS]
+    D --> E[parse JSON response]
+    E --> F[show before/after diff\nof changed fields only]
+    F --> G{user confirms\nor --force?}
+    G -- yes --> H[updateMemory\nrebuild embeddingText]
+    G -- no --> I[cancelled]
+    H --> J[(SQLite)]
+```
+
+Requires `ANTHROPIC_API_KEY` in the environment. Uses `claude-haiku-4-5-20251001` — no new npm dependency (uses Node's built-in `https` module).
 
 ---
 
@@ -265,15 +305,15 @@ sequenceDiagram
 
     CC->>Server: spawn process (node dist/cli.js mcp)
     CC->>Server: ListTools request
-    Server-->>CC: 4 tool descriptors
+    Server-->>CC: 5 tool descriptors
 
     CC->>Server: CallTool: search_coding_memory
     Server->>DB: openDb → searchMemory → db.close
-    Server-->>CC: JSON results
+    Server-->>CC: JSON results with relevanceReason + isStale
 
     CC->>Server: CallTool: save_coding_memory
-    Server->>DB: openDb → redactSecrets → saveMemory → db.close
-    Server-->>CC: { id, saved: true }
+    Server->>DB: openDb → redactSecrets → qualityCheck → saveMemory → db.close
+    Server-->>CC: { id, saved: true, warnings[] }
 ```
 
 The DB connection is opened and closed per request — no persistent connection. All stdout is reserved for JSON-RPC; logs go to stderr only.
@@ -291,6 +331,15 @@ src/
     save.ts               parse markdown → redact → save
     search.ts             resolve repo, score, print results
     show.ts               fetch by id or commit SHA
+    list.ts               list memories, --repo, --limit
+    delete.ts             delete by ID with confirmation
+    stats.ts              total memories, repos, top files
+    edit.ts               open memory in $EDITOR
+    export.ts             dump as JSON (schemaVersion envelope) or markdown
+    import.ts             ingest JSON export, deduplicate, redact
+    summarize.ts          improve memory fields via Claude API
+    doctor.ts             7-check setup diagnostic, exits 1 on failure
+    install-claude.ts     create/update .mcp.json, CLAUDE.md, settings.local.json
     mcp.ts                start MCP stdio server
   db/
     connection.ts         openDb() — WAL + foreign_keys
@@ -299,22 +348,40 @@ src/
   git/
     git.ts                getRepoRoot, getCurrentBranch, resolveCommit
     repoId.ts             getRepoId(), getRepoName(), normalizeRemoteUrl()
-    diff.ts               getChangedFilesForCommit()
+    diff.ts               getChangedFilesForCommit(), getFileRenameHistory()
     repoContext.ts        getRepoContext() → RepoContext
   memory/
     types.ts              CodingMemory, ScoreBreakdown, SearchResult, RepoContext
-    parseSummary.ts       markdown → structured fields
+    parseSummary.ts       markdown → structured fields (9 headings)
     redactSecrets.ts      SECRET_PATTERNS[], redactSecrets()
-    saveMemory.ts         saveMemory(), getMemoryById(), searchMemory helpers
-    searchMemory.ts       scoreMemory(), explainRelevance(), searchMemory()
+    saveMemory.ts         saveMemory(), updateMemory(), getMemoryById(), listMemories(), …
+    searchMemory.ts       scoreMemory(), explainRelevance(), searchMemory(), isStale()
+    qualityCheck.ts       checkQuality(), checkDuplicates() → warnings[]
     repoContext.ts        assembles RepoContext from cwd + ref
   mcp/
-    server.ts             createMcpServer() — 4 tools, stdio transport
+    server.ts             createMcpServer() — 5 tools, stdio transport
     tools.ts              Zod schemas for all tool inputs
   output/
-    format.ts             formatMemory(), formatSearchResult()
+    format.ts             formatMemory() with [STALE] note, formatSearchResult()
   skill/
-    SKILL.md              Claude Code skill instructions
+    SKILL.md              Claude Code skill instructions (keep in sync with CLAUDE.md.template)
   hooks/
     post-commit.sample.sh reminder hook template
+
+how-to-run/
+  CLAUDE.md.template      injected into user repos by install-claude (keep in sync with SKILL.md)
+  01-install.md
+  02-wire-up-your-repo.md
 ```
+
+---
+
+## Keeping instruction files in sync
+
+Three files describe how Claude should behave. They must always be consistent — see `CLAUDE.md` for the full sync rule.
+
+| File | Purpose |
+|------|---------|
+| `src/skill/SKILL.md` | Used when Whyline is loaded as a Claude Code skill |
+| `how-to-run/CLAUDE.md.template` | Injected into user repos by `whyline install-claude` |
+| Deployed `CLAUDE.md` files | Already-wired repos — patch manually after changes |

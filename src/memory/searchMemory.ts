@@ -6,6 +6,13 @@ import {
   getAllMemories,
 } from "./saveMemory.js";
 
+export const STALE_THRESHOLD_DAYS = 90;
+
+export function isStale(memory: CodingMemory, thresholdDays = STALE_THRESHOLD_DAYS): boolean {
+  const ageMs = Date.now() - new Date(memory.createdAt).getTime();
+  return ageMs > thresholdDays * 24 * 60 * 60 * 1000;
+}
+
 export type SearchOptions = {
   query: string;
   repoId?: string;

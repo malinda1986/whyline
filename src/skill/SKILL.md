@@ -8,14 +8,26 @@ Preserve and retrieve engineering reasoning across AI coding sessions.
 
 ## Before modifying code
 
-1. Identify the repo, task, and likely files to edit.
-2. Call `search_coding_memory` with:
-   - `repoPath` — the absolute path to the git repository
-   - `query` — the task description
-   - `files` — likely file paths to be modified
-3. Review retrieved memories.
-4. Treat memories as historical context, not absolute truth.
-5. Mention important retrieved constraints before making changes.
+**The very first action — before reading any file, before asking any question — is always a memory search. No exceptions.**
+
+- If the task is clearly described: call `search_coding_memory` with:
+  - `repoPath` — the absolute path to the git repository
+  - `query` — the task description
+  - `files` — likely file paths to be modified
+
+- If the task is vague or just starting out: call `get_recent_memories` with:
+  - `repoPath` — the absolute path to the git repository
+  - `limit` — 5
+
+**If memories come back**, you MUST:
+1. STOP. Do not read any file yet.
+2. Quote the memory to the user verbatim: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
+3. If the memory has `isStale: true`, add: _"Note: this memory is over 90 days old — verify it still applies before treating it as current."_
+4. Wait for the user to respond before doing anything else.
+
+**If no memories come back**, say "No past memories found for this area" and then proceed normally.
+
+Treat memories as historical context — they explain past decisions, not current truth.
 
 ## While coding
 
@@ -43,24 +55,24 @@ Summarize the coding session into a memory capsule:
 - follow-ups
 - tags
 
-Ask the user to approve the memory summary before saving.
+Show the summary to the user before saving:
+_"Here's what I'm saving as a coding memory — let me know if you want to add or correct anything:"_
 
-## After user approval
-
-Call `save_coding_memory` with the approved summary.
+Wait for the user to respond. If they add or correct something, apply it. Then call `save_coding_memory`.
 
 ## Memory quality rules
 
-Good memory is concise, factual, and useful for future coding sessions.
+Only save memories that would genuinely help a future session. Good memory:
+- Explains a non-obvious decision
+- Warns about a real risk
+- Records a rejected alternative that someone will try again
 
 Do not save:
 
-- raw noisy transcript by default
-- secrets, access tokens, or private credentials
-- temporary debugging dead ends
-- unapproved assumptions
-- huge diffs
-- unrelated conversation
+- Routine refactors with no tradeoffs
+- Things obvious from reading the code
+- Secrets, access tokens, or private credentials
+- Temporary debugging dead ends
 
 Prefer this format:
 

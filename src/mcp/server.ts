@@ -6,7 +6,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { resolveConfig } from "../config.js";
 import { openDb } from "../db/connection.js";
-import { searchMemory } from "../memory/searchMemory.js";
+import { searchMemory, isStale } from "../memory/searchMemory.js";
 import {
   saveMemory,
   generateMemoryId,
@@ -169,6 +169,7 @@ export async function createMcpServer(): Promise<void> {
                   memories: results.map((r) => ({
                     id: r.memory.id,
                     commitSha: r.memory.commitSha,
+                    createdAt: r.memory.createdAt,
                     files: r.memory.files,
                     intent: r.memory.intent,
                     summary: r.memory.summary,
@@ -179,6 +180,7 @@ export async function createMcpServer(): Promise<void> {
                     followUps: r.memory.followUps,
                     tags: r.memory.tags,
                     relevanceReason: r.relevanceReason,
+                    isStale: isStale(r.memory),
                   })),
                 }),
               },
@@ -303,6 +305,7 @@ export async function createMcpServer(): Promise<void> {
                     risks: m.risks,
                     followUps: m.followUps,
                     tags: m.tags,
+                    isStale: isStale(m),
                   })),
                 }),
               },

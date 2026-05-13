@@ -123,6 +123,15 @@ program
   });
 
 program
+  .command("summarize <id>")
+  .description("Use the Claude API to improve a saved memory's quality (requires ANTHROPIC_API_KEY)")
+  .option("--force", "Apply improvements without confirmation prompt", false)
+  .action(async (id: string, options: { force: boolean }) => {
+    const { runSummarize } = await import("./commands/summarize.js");
+    await runSummarize(id, options);
+  });
+
+program
   .command("mcp")
   .description("Start MCP server over stdio")
   .action(async () => {

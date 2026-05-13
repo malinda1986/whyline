@@ -1,7 +1,9 @@
 import type { CodingMemory, SearchResult } from "../memory/types.js";
+import { isStale } from "../memory/searchMemory.js";
 
 export function formatMemory(memory: CodingMemory, verbose = false): string {
-  const lines: string[] = [memory.id];
+  const staleNote = isStale(memory) ? "  [STALE — older than 90 days, verify still applies]" : "";
+  const lines: string[] = [memory.id + staleNote];
 
   if (memory.commitSha) lines.push(`Commit: ${memory.commitSha.slice(0, 8)}`);
   if (memory.repoName) lines.push(`Repo: ${memory.repoName}`);
