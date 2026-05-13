@@ -41,11 +41,10 @@ It works through Claude Code's MCP protocol. Two files to set it up in any repo:
 ## Installation
 
 ```bash
-git clone https://github.com/malinda1986/whyline.git
-cd whyline
-npm install
-npm run build
-npm link
+npm view @malindar/whyline version
+npm install -g @malindar/whyline
+whyline --help
+whyline doctor
 ```
 
 ### Node version requirement
@@ -64,6 +63,8 @@ npm rebuild better-sqlite3
 
 ```bash
 whyline init
+whyline install-claude
+whyline doctor
 ```
 
 Creates `~/.whyline/` with `memory.db` and `config.json`.
