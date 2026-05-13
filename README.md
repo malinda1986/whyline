@@ -12,7 +12,7 @@ Local-first memory for AI coding sessions.
 
 ## Why this exists
 
-You've been there. You open a file, see a decision made months ago, and have no idea why. The diff shows *what* changed. The commit message says "fix retention logic." But why 90 days? Why a background job and not a cron? Why not S3?
+You've been there. You open a file, see a decision made months ago, and have no idea why. The diff shows _what_ changed. The commit message says "fix retention logic." But why 90 days? Why a background job and not a cron? Why not S3?
 
 That context lived in a conversation — and it's gone.
 
@@ -37,7 +37,7 @@ It works through Claude Code's MCP protocol. Two files to set it up in any repo:
 ## Installation
 
 ```bash
-git clone <repo>
+git clone https://github.com/malinda1986/whyline.git
 cd whyline
 npm install
 npm run build
@@ -84,18 +84,22 @@ Why:
 Waiting for server confirmation made comment creation feel slow.
 
 Alternatives rejected:
+
 - Server-confirmed rendering only.
 - Polling for new comments after submit.
 
 Risks:
+
 - Duplicate comments during reconnect.
 - Failed server ack needs rollback UI.
 
 Follow-ups:
+
 - Add dedupe reconciliation tests.
 - Add failed-send retry state.
 
 Tags:
+
 - comments
 - sync
 - optimistic-ui
@@ -108,6 +112,7 @@ whyline save --commit HEAD --summary-file memory.md
 ```
 
 Output:
+
 ```
 Saved memory mem_abc12345
 Repo: my-app
@@ -163,17 +168,17 @@ The parser is forgiving — missing fields fall back to safe defaults.
 
 Supported headings:
 
-| Heading | Type | Default |
-|---------|------|---------|
-| `Task:` | text | *(omitted)* |
-| `Intent:` | text | `"Unspecified intent"` |
-| `Summary:` | text | *(full file content)* |
-| `Decision:` | text | `"Unspecified decision"` |
-| `Why:` | text | `"Unspecified rationale"` |
-| `Alternatives rejected:` | bullet list | `[]` |
-| `Risks:` | bullet list | `[]` |
-| `Follow-ups:` | bullet list | `[]` |
-| `Tags:` | bullet list | `[]` |
+| Heading                  | Type        | Default                   |
+| ------------------------ | ----------- | ------------------------- |
+| `Task:`                  | text        | _(omitted)_               |
+| `Intent:`                | text        | `"Unspecified intent"`    |
+| `Summary:`               | text        | _(full file content)_     |
+| `Decision:`              | text        | `"Unspecified decision"`  |
+| `Why:`                   | text        | `"Unspecified rationale"` |
+| `Alternatives rejected:` | bullet list | `[]`                      |
+| `Risks:`                 | bullet list | `[]`                      |
+| `Follow-ups:`            | bullet list | `[]`                      |
+| `Tags:`                  | bullet list | `[]`                      |
 
 ---
 
@@ -181,12 +186,12 @@ Supported headings:
 
 Claude Code can call these tools via the MCP server:
 
-| Tool | Description |
-|------|-------------|
-| `search_coding_memory` | Search memories by keyword |
-| `save_coding_memory` | Save a new memory |
-| `get_commit_memory` | Get memories for a specific commit |
-| `get_file_memories` | Get memories touching a specific file |
+| Tool                   | Description                           |
+| ---------------------- | ------------------------------------- |
+| `search_coding_memory` | Search memories by keyword            |
+| `save_coding_memory`   | Save a new memory                     |
+| `get_commit_memory`    | Get memories for a specific commit    |
+| `get_file_memories`    | Get memories touching a specific file |
 
 ---
 
