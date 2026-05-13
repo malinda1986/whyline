@@ -8,7 +8,6 @@ import { saveMemory, generateMemoryId, getAllMemories, getMemoryById } from "../
 import { runExport } from "../src/commands/export.js";
 import { runImport } from "../src/commands/import.js";
 import type { CodingMemory } from "../src/memory/types.js";
-import type Database from "better-sqlite3";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "whyline-exportimport-"));
 const dbPath = path.join(tmpDir, "memory.db");

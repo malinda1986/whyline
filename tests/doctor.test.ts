@@ -7,30 +7,27 @@ import { runMigrations } from "../src/db/migrations.js";
 import { MIGRATIONS } from "../src/db/schema.js";
 
 // Capture console output
-function captureOutput(fn: () => Promise<void>): Promise<{ stdout: string; exitCode: number }> {
-  return new Promise(async (resolve) => {
-    const lines: string[] = [];
-    const orig = console.log;
-    console.log = (...args: unknown[]) => lines.push(args.join(" "));
+async function captureOutput(fn: () => Promise<void>): Promise<{ stdout: string; exitCode: number }> {
+  const lines: string[] = [];
+  const orig = console.log;
+  console.log = (...args: unknown[]) => lines.push(args.join(" "));
 
-    let exitCode = 0;
-    const origExit = process.exit.bind(process);
-    vi.spyOn(process, "exit").mockImplementation((code?: number) => {
-      exitCode = code ?? 0;
-      throw new Error(`process.exit(${code})`);
-    });
-
-    try {
-      await fn();
-    } catch (e: unknown) {
-      if (!(e instanceof Error) || !e.message.startsWith("process.exit")) throw e;
-    } finally {
-      console.log = orig;
-      vi.restoreAllMocks();
-    }
-
-    resolve({ stdout: lines.join("\n"), exitCode });
+  let exitCode = 0;
+  vi.spyOn(process, "exit").mockImplementation((code?: number) => {
+    exitCode = code ?? 0;
+    throw new Error(`process.exit(${code})`);
   });
+
+  try {
+    await fn();
+  } catch (e: unknown) {
+    if (!(e instanceof Error) || !e.message.startsWith("process.exit")) throw e;
+  } finally {
+    console.log = orig;
+    vi.restoreAllMocks();
+  }
+
+  return { stdout: lines.join("\n"), exitCode };
 }
 
 describe("doctor — DB checks", () => {
