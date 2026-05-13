@@ -1,5 +1,9 @@
 # Whyline
 
+<p align="center">
+  <img src="docs/logo.png" alt="Whyline" width="120" />
+</p>
+
 ![npm](https://img.shields.io/npm/v/whyline)
 ![license](https://img.shields.io/github/license/malinda1986/whyline)
 ![build](https://img.shields.io/github/actions/workflow/status/malinda1986/whyline/ci.yml)
