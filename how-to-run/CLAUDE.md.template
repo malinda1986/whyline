@@ -6,7 +6,7 @@ You have access to a `whyline` MCP server. Use it every session.
 
 ### When you start working on ANY task
 
-**Before asking any clarifying question or touching any file**, search for past context:
+**The very first action — before reading any file, before asking any question — is always a memory search. No exceptions.**
 
 - If the task is clearly described: call `search_coding_memory` with:
   - `repoPath`: `/absolute/path/to/your-repo`   ← change this
@@ -18,9 +18,12 @@ You have access to a `whyline` MCP server. Use it every session.
   - `limit`: 5
 
 **If memories come back**, you MUST:
-1. Show the user what was previously decided and why: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
-2. Wait for the user to give a reason before asking implementation questions (e.g. "what value?", "what should it be?")
-3. Record the new reason when saving the updated memory
+1. STOP. Do not read any file yet.
+2. Quote the memory to the user verbatim: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
+3. Wait for the user to respond before doing anything else.
+4. Record the new reason when saving the updated memory.
+
+**If no memories come back**, say "No past memories found for this area" and then proceed normally.
 
 Do not skip straight to implementation questions when a past memory exists for the same area. The reason matters — it goes into the next memory.
 
