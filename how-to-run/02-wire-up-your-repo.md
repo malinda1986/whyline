@@ -1,13 +1,27 @@
 # Step 2 — Wire Up Your Repo
 
-These two files tell Claude Code to use Whyline in your project.
-Add them to the root of any repo you want Whyline to work in.
+Run this once in each repo you want Whyline to work in:
+
+```bash
+cd your-project
+whyline install-claude
+```
+
+That's it. The command creates or updates three files:
+
+| File | What it does |
+|------|-------------|
+| `.mcp.json` | Registers the `whyline` MCP server with Claude Code |
+| `CLAUDE.md` | Adds the memory instructions so Claude searches and saves automatically |
+| `.claude/settings.local.json` | Auto-approves the five MCP tool calls so Claude doesn't prompt on every use |
+
+Running it again is safe — it merges, never overwrites unrelated content.
 
 ---
 
-## File 1 — `.mcp.json`
+## What the files look like
 
-Create `.mcp.json` at the repo root:
+### `.mcp.json`
 
 ```json
 {
@@ -20,7 +34,7 @@ Create `.mcp.json` at the repo root:
 }
 ```
 
-> **If `whyline` is not on your PATH** (e.g. you didn't run `npm link`), use the absolute path instead:
+> **If `whyline` is not on your PATH** (e.g. you didn't run `npm link`), edit this to use the absolute path:
 > ```json
 > {
 >   "mcpServers": {
@@ -32,18 +46,17 @@ Create `.mcp.json` at the repo root:
 > }
 > ```
 
----
-
-## File 2 — `.claude/settings.local.json`
-
-Create `.claude/settings.local.json` at the repo root to auto-approve the MCP tools so Claude doesn't prompt on every call:
+### `.claude/settings.local.json`
 
 ```json
 {
   "permissions": {
     "allow": [
       "mcp__whyline__save_coding_memory",
-      "mcp__whyline__search_coding_memory"
+      "mcp__whyline__search_coding_memory",
+      "mcp__whyline__get_recent_memories",
+      "mcp__whyline__get_file_memories",
+      "mcp__whyline__get_commit_memory"
     ]
   },
   "enabledMcpjsonServers": ["whyline"]
@@ -52,23 +65,16 @@ Create `.claude/settings.local.json` at the repo root to auto-approve the MCP to
 
 > `settings.local.json` is machine-specific. Add it to your `.gitignore` if you don't want it committed.
 
----
+### `CLAUDE.md`
 
-## File 3 — `CLAUDE.md`
-
-Create or update `CLAUDE.md` at the repo root with the contents from `how-to-run/CLAUDE.md.template` in this folder.
-
-Customise the `repoPath` value to the absolute path of your repo on your machine.
+The Whyline section is appended to any existing `CLAUDE.md`, or a new file is created if none exists. See `CLAUDE.md.template` in this folder for the full content.
 
 ---
 
-## Verify the MCP server starts
+## Verify the setup
 
 ```bash
-cd your-repo
-whyline mcp
+whyline doctor
 ```
 
-You should see the server start with no errors. Press `Ctrl+C` to stop.
-
-Claude Code will start it automatically when you open the repo.
+All seven checks should pass before you start a session.

@@ -13,14 +13,18 @@ import {
   buildEmbeddingText,
   getMemoriesByCommit,
   getMemoriesByFile,
+  listMemories,
 } from "../memory/saveMemory.js";
 import { getRepoId } from "../git/repoId.js";
+import { getFileRenameHistory } from "../git/diff.js";
 import { redactSecrets } from "../memory/redactSecrets.js";
+import { checkQuality, checkDuplicates } from "../memory/qualityCheck.js";
 import {
   SearchMemoryInput,
   SaveMemoryInput,
   GetCommitMemoryInput,
   GetFileMemoriesInput,
+  GetRecentMemoriesInput,
 } from "./tools.js";
 import type { CodingMemory } from "../memory/types.js";
 
@@ -59,6 +63,13 @@ export async function createMcpServer(): Promise<void> {
               items: { type: "string" },
               description: "Filter by file paths",
             },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+              description: "Filter by tags (memory must have all listed tags)",
+            },
+            since: { type: "string", description: "ISO date — only memories created after this (e.g. 2025-01-01)" },
+            before: { type: "string", description: "ISO date — only memories created before this (e.g. 2025-12-31)" },
             limit: { type: "number", description: "Max results (default 10)" },
           },
           required: ["query"],
@@ -66,7 +77,7 @@ export async function createMcpServer(): Promise<void> {
       },
       {
         name: "save_coding_memory",
-        description: "Save a new coding memory with reasoning, decisions, and context.",
+        description: "Save a new coding memory with reasoning, decisions, and context. Returns warnings if fields are too short, contain filler text, or a similar memory already exists — surface these warnings to the user so they can enrich the memory.",
         inputSchema: {
           type: "object",
           properties: {
@@ -117,6 +128,19 @@ export async function createMcpServer(): Promise<void> {
           required: ["filePath"],
         },
       },
+      {
+        name: "get_recent_memories",
+        description: "Get the most recent coding memories for a repo without requiring a search query. Use this at session start when the task is not yet defined, to surface relevant recent context.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            repoPath: { type: "string", description: "Absolute path to the git repository" },
+            repoId: { type: "string", description: "Repository ID (hash)" },
+            limit: { type: "number", description: "Max results (default 5)" },
+          },
+          required: [],
+        },
+      },
     ],
   }));
 
@@ -132,6 +156,9 @@ export async function createMcpServer(): Promise<void> {
             repoId: resolvedRepoId,
             repoPath: input.repoPath,
             files: input.files,
+            tags: input.tags,
+            since: input.since,
+            before: input.before,
             limit: input.limit,
           });
           return {
@@ -187,9 +214,22 @@ export async function createMcpServer(): Promise<void> {
           };
           memory.embeddingText = buildEmbeddingText(memory);
 
+          const qualityWarnings = checkQuality(memory);
+          const duplicateWarnings = checkDuplicates(db, memory);
+
           saveMemory(db, memory);
           return {
-            content: [{ type: "text", text: JSON.stringify({ id, saved: true }) }],
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                id,
+                saved: true,
+                warnings: [
+                  ...qualityWarnings.map((w) => w.message),
+                  ...duplicateWarnings.map((w) => w.message),
+                ],
+              }),
+            }],
           };
         }
 
@@ -219,7 +259,10 @@ export async function createMcpServer(): Promise<void> {
         case "get_file_memories": {
           const input = GetFileMemoriesInput.parse(request.params.arguments);
           const resolvedRepoId = resolveRepoId(input.repoPath, input.repoId) ?? null;
-          const memories = getMemoriesByFile(db, resolvedRepoId, input.filePath, input.limit);
+          const filePaths = input.repoPath
+            ? getFileRenameHistory(input.repoPath, input.filePath)
+            : [input.filePath];
+          const memories = getMemoriesByFile(db, resolvedRepoId, filePaths, input.limit);
           return {
             content: [
               {
@@ -233,6 +276,33 @@ export async function createMcpServer(): Promise<void> {
                     why: m.why,
                     risks: m.risks,
                     followUps: m.followUps,
+                  })),
+                }),
+              },
+            ],
+          };
+        }
+
+        case "get_recent_memories": {
+          const input = GetRecentMemoriesInput.parse(request.params.arguments);
+          const resolvedRepoId = resolveRepoId(input.repoPath, input.repoId);
+          const memories = listMemories(db, { repoId: resolvedRepoId, limit: input.limit });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  memories: memories.map((m) => ({
+                    id: m.id,
+                    commitSha: m.commitSha,
+                    createdAt: m.createdAt,
+                    files: m.files,
+                    intent: m.intent,
+                    decision: m.decision,
+                    why: m.why,
+                    risks: m.risks,
+                    followUps: m.followUps,
+                    tags: m.tags,
                   })),
                 }),
               },

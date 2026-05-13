@@ -8,7 +8,7 @@ export async function runShow(
   options: { commit?: string }
 ): Promise<void> {
   if (!isInitialized()) {
-    console.error("coding-memory is not initialized. Run `coding-memory init` first.");
+    console.error("whyline is not initialized. Run `whyline init` first.");
     process.exit(1);
   }
 

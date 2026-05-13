@@ -6,10 +6,16 @@ You have access to a `whyline` MCP server. Use it every session.
 
 ### When you start working on ANY task
 
-**Before asking any clarifying question or touching any file**, call `search_coding_memory` with:
-- `repoPath`: `/absolute/path/to/your-repo`   ← change this
-- `query`: the task or feature the user just described
-- `files`: any files you already know are relevant
+**Before asking any clarifying question or touching any file**, search for past context:
+
+- If the task is clearly described: call `search_coding_memory` with:
+  - `repoPath`: `/absolute/path/to/your-repo`   ← change this
+  - `query`: the task or feature the user just described
+  - `files`: any files you already know are relevant
+
+- If the task is vague or just starting out: call `get_recent_memories` with:
+  - `repoPath`: `/absolute/path/to/your-repo`   ← change this
+  - `limit`: 5
 
 **If memories come back**, you MUST:
 1. Show the user what was previously decided and why: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
@@ -44,6 +50,8 @@ After `git commit` succeeds:
    - `files`: files changed in this session
    - `source`: `"claude-code"`
    - all synthesized fields above
+
+5. If the response contains a non-empty `warnings` array, show each warning to the user and offer to update the memory with richer detail.
 
 Do not ask for approval — the memory is always saved. The user can only enrich or correct it.
 

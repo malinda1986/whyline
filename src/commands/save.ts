@@ -5,11 +5,12 @@ import { getRepoContext } from "../memory/repoContext.js";
 import { parseSummary } from "../memory/parseSummary.js";
 import { redactSecrets } from "../memory/redactSecrets.js";
 import { saveMemory, generateMemoryId, buildEmbeddingText } from "../memory/saveMemory.js";
+import { checkQuality, checkDuplicates } from "../memory/qualityCheck.js";
 import type { CodingMemory } from "../memory/types.js";
 
 export async function runSave(options: { commit: string; summaryFile: string }): Promise<void> {
   if (!isInitialized()) {
-    console.error("coding-memory is not initialized. Run `coding-memory init` first.");
+    console.error("whyline is not initialized. Run `whyline init` first.");
     process.exit(1);
   }
 
@@ -60,11 +61,25 @@ export async function runSave(options: { commit: string; summaryFile: string }):
   memory.embeddingText = buildEmbeddingText(memory);
 
   const db = openDb(resolveConfig().storage.dbPath);
+
+  const qualityWarnings = checkQuality(memory);
+  const duplicateWarnings = checkDuplicates(db, memory);
+
   saveMemory(db, memory);
   db.close();
 
-  console.log(`Saved coding memory ${memory.id}`);
+  console.log(`Saved memory ${memory.id}`);
   console.log(`Repo: ${ctx.repoName}`);
   console.log(`Commit: ${ctx.commitSha.slice(0, 8)}`);
   console.log(`Files: ${ctx.changedFiles.length}`);
+
+  if (qualityWarnings.length > 0) {
+    console.log("\nQuality warnings:");
+    for (const w of qualityWarnings) console.warn(`  ⚠  ${w.message}`);
+  }
+
+  if (duplicateWarnings.length > 0) {
+    console.log("\nDuplicate warnings:");
+    for (const w of duplicateWarnings) console.warn(`  ⚠  ${w.message}`);
+  }
 }

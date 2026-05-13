@@ -64,7 +64,51 @@ whyline init
 
 Creates `~/.whyline/` with `memory.db` and `config.json`.
 
-### 2. Create a memory summary file
+### 2. Wire up a repo
+
+Run this once in each repo you want Whyline to work in:
+
+```bash
+cd your-project
+whyline install-claude
+```
+
+Creates or updates three files:
+- `.mcp.json` — registers the Whyline MCP server (merges with existing entries)
+- `CLAUDE.md` — adds the memory instructions for Claude (appends if the file already exists)
+- `.claude/settings.local.json` — auto-approves the five MCP tool calls so Claude doesn't prompt on every use
+
+```
+  ✓  .mcp.json  (created)
+  ✓  CLAUDE.md  (created)
+  ✓  .claude/settings.local.json  (created)
+
+Done. Open this repo in Claude Code and run `whyline doctor` to verify.
+```
+
+Running it again is safe — it only writes what's missing and never removes existing content.
+
+### 3. Verify setup (optional)
+
+```bash
+whyline doctor
+```
+
+Checks that the DB exists, migrations are current, the binary is on your PATH, you're inside a git repo, `.mcp.json` is configured, `CLAUDE.md` mentions Whyline, and the MCP server starts. Run this whenever something feels off.
+
+```
+  ✓  DB exists  (~/.whyline/memory.db)
+  ✓  Migrations current  (v1)
+  ✓  `whyline` on PATH  (/usr/local/bin/whyline)
+  ✓  Inside a git repo  (/home/user/my-app)
+  ✓  .mcp.json configured  (/home/user/my-app/.mcp.json)
+  ✓  CLAUDE.md mentions Whyline  (/home/user/my-app/CLAUDE.md)
+  ✓  MCP server starts  (tools/list responded)
+
+All checks passed. Whyline is ready.
+```
+
+### 3. Create a memory summary file
 
 Create `memory.md` in your project:
 
@@ -105,7 +149,7 @@ Tags:
 - optimistic-ui
 ```
 
-### 3. Save a memory
+### 4. Save a memory
 
 ```bash
 whyline save --commit HEAD --summary-file memory.md
@@ -120,22 +164,88 @@ Commit: abc12345
 Files: 3
 ```
 
-### 4. Search memories
+### 5. Search memories
 
 ```bash
 whyline search "why optimistic comments?"
 whyline search "refresh token" --file src/auth/session.ts
 whyline search "checkout validation" --limit 5
+
+# Filter by tag (repeat for AND semantics)
+whyline search "" --tag auth --tag security
+
+# Filter by date
+whyline search "" --since 2025-01-01
+whyline search "" --before 2025-06-30
+whyline search "token" --tag auth --since 2025-01-01 --before 2025-12-31
 ```
 
-### 5. Show a memory
+### 6. Browse all memories
+
+```bash
+whyline list              # all memories, newest first
+whyline list --repo       # scoped to the current git repo
+whyline list --limit 5    # cap results
+```
+
+### 7. Show a memory
 
 ```bash
 whyline show mem_abc12345
 whyline show --commit abc12345
 ```
 
-### 6. Start MCP server
+### 8. Edit a memory
+
+Open a memory in `$EDITOR` as markdown, save changes back to the DB:
+
+```bash
+whyline edit mem_abc12345
+```
+
+### 9. Delete a memory
+
+```bash
+whyline delete mem_abc12345          # prompts for confirmation
+whyline delete mem_abc12345 --force  # skips confirmation
+```
+
+### 10. Export & import memories
+
+```bash
+# Export all memories as JSON (default)
+whyline export > backup.json
+
+# Export as markdown
+whyline export --format md --output memories.md
+
+# Export only this repo's memories, filtered by tag and date
+whyline export --repo --tag auth --since 2025-01-01 --output auth-memories.json
+
+# Import from a previous export (skips duplicates, redacts any exposed secrets)
+whyline import backup.json
+```
+
+### 11. Storage stats
+
+```bash
+whyline stats
+```
+
+Output:
+```
+Total memories:  42
+Repos tracked:   3
+Oldest memory:   1/15/2025
+Newest memory:   5/13/2026
+
+Most referenced files:
+  12x  src/auth/session.ts
+   8x  src/comments/sync.ts
+   5x  src/db/migrations.ts
+```
+
+### 12. Start MCP server
 
 ```bash
 whyline mcp
@@ -240,9 +350,6 @@ All data is stored locally at `~/.whyline/memory.db` (SQLite). The repository is
 
 ## Roadmap
 
-- v0.2 — `--manual` interactive save mode
-- v0.3 — optional LLM summarization
-- v0.4 — embeddings-based search
-- v0.5 — import Claude Code transcript manually
+- v0.6 — `--manual` interactive save mode
 - v0.6 — GitHub PR integration
 - v0.7 — team-shared memory server

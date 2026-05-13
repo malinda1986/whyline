@@ -11,6 +11,9 @@ export type SearchOptions = {
   repoId?: string;
   repoPath?: string;
   files?: string[];
+  tags?: string[];
+  since?: string;
+  before?: string;
   limit?: number;
 };
 
@@ -83,13 +86,12 @@ export function explainRelevance(scores: ScoreBreakdown): string {
 }
 
 export function searchMemory(db: Database.Database, options: SearchOptions): SearchResult[] {
-  const { query, repoId, repoPath, files = [], limit = 10 } = options;
+  const { query, repoId, repoPath, files = [], tags = [], since, before, limit = 10 } = options;
 
   let memories: CodingMemory[] = [];
 
   if (repoId) {
     memories = getMemoriesByRepoId(db, repoId);
-    // Fallback to repo path search if repo ID yields no results
     if (memories.length === 0 && repoPath) {
       memories = getMemoriesByRepoPath(db, repoPath);
     }
@@ -99,20 +101,35 @@ export function searchMemory(db: Database.Database, options: SearchOptions): Sea
     memories = getAllMemories(db);
   }
 
+  // Date filters
+  const sinceMs = since ? new Date(since).getTime() : null;
+  const beforeMs = before ? new Date(before).getTime() : null;
+  if (sinceMs !== null || beforeMs !== null) {
+    memories = memories.filter((m) => {
+      const t = new Date(m.createdAt).getTime();
+      if (sinceMs !== null && t < sinceMs) return false;
+      if (beforeMs !== null && t > beforeMs) return false;
+      return true;
+    });
+  }
+
+  // Tag filter — memory must have ALL requested tags
+  if (tags.length > 0) {
+    const lowerTags = tags.map((t) => t.toLowerCase());
+    memories = memories.filter((m) =>
+      lowerTags.every((tag) => m.tags.map((t) => t.toLowerCase()).includes(tag))
+    );
+  }
+
   const emptyQuery = query.trim() === "";
 
   const results: SearchResult[] = memories
     .map((memory) => {
       const score = scoreMemory(memory, query, repoId ?? null, files);
-      return {
-        memory,
-        score,
-        relevanceReason: explainRelevance(score),
-      };
+      return { memory, score, relevanceReason: explainRelevance(score) };
     })
     .filter((r) => {
       if (emptyQuery) return true;
-      // Require at least one content-based component to match
       const contentScore =
         r.score.fileOverlap +
         r.score.tagMatch +

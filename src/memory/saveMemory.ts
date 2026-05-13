@@ -201,30 +201,32 @@ export function getMemoriesByCommit(db: Database.Database, commitSha: string): C
 export function getMemoriesByFile(
   db: Database.Database,
   repoId: string | null,
-  filePath: string,
+  filePaths: string | string[],
   limit: number
 ): CodingMemory[] {
+  const paths = Array.isArray(filePaths) ? filePaths : [filePaths];
+  const placeholders = paths.map(() => "?").join(", ");
   let rows: MemoryRow[];
   if (repoId) {
     rows = db
-      .prepare<[string, string, number], MemoryRow>(
-        `SELECT m.* FROM memories m
+      .prepare<unknown[], MemoryRow>(
+        `SELECT DISTINCT m.* FROM memories m
          JOIN memory_files f ON f.memory_id = m.id
-         WHERE m.repo_id = ? AND f.file_path = ?
+         WHERE m.repo_id = ? AND f.file_path IN (${placeholders})
          ORDER BY m.created_at DESC
          LIMIT ?`
       )
-      .all(repoId, filePath, limit);
+      .all(repoId, ...paths, limit);
   } else {
     rows = db
-      .prepare<[string, number], MemoryRow>(
-        `SELECT m.* FROM memories m
+      .prepare<unknown[], MemoryRow>(
+        `SELECT DISTINCT m.* FROM memories m
          JOIN memory_files f ON f.memory_id = m.id
-         WHERE f.file_path = ?
+         WHERE f.file_path IN (${placeholders})
          ORDER BY m.created_at DESC
          LIMIT ?`
       )
-      .all(filePath, limit);
+      .all(...paths, limit);
   }
   return rows.map((r) => hydrateMemory(db, r));
 }
@@ -252,4 +254,116 @@ export function getMemoriesByRepoPath(db: Database.Database, repoPath: string): 
     )
     .all(`%${repoPath}%`);
   return rows.map((r) => hydrateMemory(db, r));
+}
+
+export function listMemories(
+  db: Database.Database,
+  options: { repoId?: string; limit: number }
+): CodingMemory[] {
+  let rows: MemoryRow[];
+  if (options.repoId) {
+    rows = db
+      .prepare<[string, number], MemoryRow>(
+        "SELECT * FROM memories WHERE repo_id = ? ORDER BY created_at DESC LIMIT ?"
+      )
+      .all(options.repoId, options.limit);
+  } else {
+    rows = db
+      .prepare<[number], MemoryRow>(
+        "SELECT * FROM memories ORDER BY created_at DESC LIMIT ?"
+      )
+      .all(options.limit);
+  }
+  return rows.map((r) => hydrateMemory(db, r));
+}
+
+export function deleteMemory(db: Database.Database, id: string): void {
+  db.prepare<[string]>("DELETE FROM memories WHERE id = ?").run(id);
+}
+
+export type MemoryStats = {
+  total: number;
+  repos: number;
+  oldest: string;
+  newest: string;
+  topFiles: { filePath: string; count: number }[];
+};
+
+export function getStats(db: Database.Database): MemoryStats {
+  const row = db
+    .prepare<[], { total: number; repos: number; oldest: string; newest: string }>(
+      "SELECT COUNT(*) as total, COUNT(DISTINCT repo_id) as repos, MIN(created_at) as oldest, MAX(created_at) as newest FROM memories"
+    )
+    .get();
+
+  const topFiles = db
+    .prepare<[], { file_path: string; count: number }>(
+      "SELECT file_path, COUNT(*) as count FROM memory_files GROUP BY file_path ORDER BY count DESC LIMIT 10"
+    )
+    .all()
+    .map((r) => ({ filePath: r.file_path, count: r.count }));
+
+  return {
+    total: row?.total ?? 0,
+    repos: row?.repos ?? 0,
+    oldest: row?.oldest ? new Date(row.oldest).toLocaleDateString() : "-",
+    newest: row?.newest ? new Date(row.newest).toLocaleDateString() : "-",
+    topFiles,
+  };
+}
+
+export function updateMemory(
+  db: Database.Database,
+  id: string,
+  updates: {
+    intent?: string;
+    summary?: string;
+    decision?: string;
+    why?: string;
+    task?: string;
+    alternativesRejected?: string[];
+    risks?: string[];
+    followUps?: string[];
+    tags?: string[];
+    embeddingText?: string;
+  }
+): void {
+  const now = new Date().toISOString();
+
+  db.prepare(
+    "UPDATE memories SET intent = ?, summary = ?, decision = ?, why = ?, task = ?, embedding_text = ?, updated_at = ? WHERE id = ?"
+  ).run(
+    updates.intent ?? "",
+    updates.summary ?? "",
+    updates.decision ?? "",
+    updates.why ?? "",
+    updates.task ?? null,
+    updates.embeddingText ?? "",
+    now,
+    id
+  );
+
+  if (updates.tags !== undefined) {
+    db.prepare<[string]>("DELETE FROM memory_tags WHERE memory_id = ?").run(id);
+    const ins = db.prepare("INSERT OR IGNORE INTO memory_tags (memory_id, tag) VALUES (?, ?)");
+    for (const t of updates.tags) ins.run(id, t);
+  }
+
+  if (updates.alternativesRejected !== undefined) {
+    db.prepare<[string]>("DELETE FROM memory_alternatives WHERE memory_id = ?").run(id);
+    const ins = db.prepare("INSERT OR IGNORE INTO memory_alternatives (memory_id, value) VALUES (?, ?)");
+    for (const a of updates.alternativesRejected) ins.run(id, a);
+  }
+
+  if (updates.risks !== undefined) {
+    db.prepare<[string]>("DELETE FROM memory_risks WHERE memory_id = ?").run(id);
+    const ins = db.prepare("INSERT OR IGNORE INTO memory_risks (memory_id, value) VALUES (?, ?)");
+    for (const r of updates.risks) ins.run(id, r);
+  }
+
+  if (updates.followUps !== undefined) {
+    db.prepare<[string]>("DELETE FROM memory_followups WHERE memory_id = ?").run(id);
+    const ins = db.prepare("INSERT OR IGNORE INTO memory_followups (memory_id, value) VALUES (?, ?)");
+    for (const fu of updates.followUps) ins.run(id, fu);
+  }
 }

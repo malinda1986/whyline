@@ -5,6 +5,9 @@ export const SearchMemoryInput = z.object({
   repoId: z.string().optional(),
   query: z.string(),
   files: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  since: z.string().optional(),
+  before: z.string().optional(),
   limit: z.number().int().positive().default(10),
 });
 
@@ -37,7 +40,14 @@ export const GetFileMemoriesInput = z.object({
   limit: z.number().int().positive().default(10),
 });
 
+export const GetRecentMemoriesInput = z.object({
+  repoPath: z.string().optional(),
+  repoId: z.string().optional(),
+  limit: z.number().int().positive().default(5),
+});
+
 export type SearchMemoryInputType = z.infer<typeof SearchMemoryInput>;
 export type SaveMemoryInputType = z.infer<typeof SaveMemoryInput>;
 export type GetCommitMemoryInputType = z.infer<typeof GetCommitMemoryInput>;
 export type GetFileMemoriesInputType = z.infer<typeof GetFileMemoriesInput>;
+export type GetRecentMemoriesInputType = z.infer<typeof GetRecentMemoriesInput>;
