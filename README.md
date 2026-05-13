@@ -4,7 +4,7 @@
   <img src="docs/logo.png" alt="Whyline" width="120" />
 </p>
 
-![npm](https://img.shields.io/npm/v/whyline)
+![npm](https://img.shields.io/npm/v/malindar/whyline)
 ![license](https://img.shields.io/github/license/malinda1986/whyline)
 ![build](https://img.shields.io/github/actions/workflow/status/malinda1986/whyline/ci.yml)
 
@@ -78,6 +78,7 @@ whyline install-claude
 ```
 
 Creates or updates three files:
+
 - `.mcp.json` — registers the Whyline MCP server (merges with existing entries)
 - `CLAUDE.md` — adds the memory instructions for Claude (appends if the file already exists)
 - `.claude/settings.local.json` — auto-approves the five MCP tool calls so Claude doesn't prompt on every use
@@ -237,6 +238,7 @@ whyline stats
 ```
 
 Output:
+
 ```
 Total memories:  42
 Repos tracked:   3
