@@ -39,9 +39,9 @@
     "lint": "eslint src tests",
     "format": "prettier --write src tests",
     "prepublishOnly": "npm run build",
-    "release:patch": "npm version patch && git push && git push --tags",
-    "release:minor": "npm version minor && git push && git push --tags",
-    "release:major": "npm version major && git push && git push --tags"
+    "release:patch": "npm version patch && git push -u origin HEAD && git push --tags",
+    "release:minor": "npm version minor && git push -u origin HEAD && git push --tags",
+    "release:major": "npm version major && git push -u origin HEAD && git push --tags"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
