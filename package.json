@@ -33,6 +33,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
+    "postbuild": "cp src/commands/browse.html dist/commands/browse.html",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",

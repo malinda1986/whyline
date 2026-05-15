@@ -142,6 +142,14 @@ program
   });
 
 program
+  .command("browse")
+  .description("Open a local web UI showing memories for the current repo")
+  .action(async () => {
+    const { runBrowse } = await import("./commands/browse.js");
+    await runBrowse();
+  });
+
+program
   .command("mcp")
   .description("Start MCP server over stdio")
   .action(async () => {
