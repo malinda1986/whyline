@@ -1,0 +1,74 @@
+/* docs/style.css */
+
+/* ── Design tokens ── */
+:root {
+  --color-bg: #ffffff;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-code-bg: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-invert-bg: #0f172a;
+  --color-invert-text: #f8fafc;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --max-width: 760px;
+  --radius: 8px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--color-accent); text-decoration: none; }
+a:hover { color: var(--color-accent-hover); }
+
+/* ── Shared layout ── */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Typography scale ── */
+h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; }
+h2 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 16px; }
+h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+p  { color: var(--color-text-secondary); margin-bottom: 16px; }
+p:last-child { margin-bottom: 0; }
+
+/* ── Nav ── */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+.nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+}
+.nav__brand {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+.nav__github {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.nav__github:hover { color: var(--color-accent); }
