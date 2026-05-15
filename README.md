@@ -1,7 +1,7 @@
 # Whyline
 
 <p align="center">
-  <img src="docs/logo-2.png" alt="Whyline" width="120" />
+  <img src="docs/logo-2.png" alt="Whyline" width="220" />
 </p>
 
 ![npm](https://img.shields.io/npm/v/@malindar/whyline)
