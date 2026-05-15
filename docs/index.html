@@ -92,6 +92,38 @@
   </div>
 </section>
 
+<section class="quickstart" id="quickstart">
+  <div class="container">
+    <h2>Up in three commands</h2>
+
+    <div class="qs-step">
+      <p class="qs-step__label">1 — Install</p>
+      <pre class="code-block"><code>npm install -g @malindar/whyline</code></pre>
+    </div>
+
+    <div class="qs-step">
+      <p class="qs-step__label">2 — Wire up a repo</p>
+      <pre class="code-block"><code>cd your-project
+whyline install --tool claude   # or --tool cursor</code></pre>
+    </div>
+
+    <div class="qs-step">
+      <p class="qs-step__label">3 — Verify</p>
+      <pre class="code-block"><code>whyline doctor</code></pre>
+    </div>
+
+    <pre class="terminal-block"><code><span class="t-check">✓</span>  DB exists
+<span class="t-check">✓</span>  Migrations current
+<span class="t-check">✓</span>  whyline on PATH
+<span class="t-check">✓</span>  Inside a git repo
+<span class="t-check">✓</span>  MCP config
+<span class="t-check">✓</span>  Instruction file mentions Whyline
+<span class="t-check">✓</span>  MCP server starts
+
+<span class="t-success">All checks passed. Whyline is ready.</span></code></pre>
+  </div>
+</section>
+
 <!-- remaining sections -->
 
 </body>
