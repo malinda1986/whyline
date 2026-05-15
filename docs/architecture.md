@@ -61,7 +61,8 @@ graph TB
         import[import]
         summarize[summarize]
         doctor[doctor]
-        install[install-claude]
+        install[install]
+        install_claude[install-claude\n(shim)]
         mcp_cmd[mcp]
     end
 
@@ -125,6 +126,7 @@ graph TB
     repoContext --> repoId
     repoContext --> diff
 
+    install_claude --> install
     mcp_cmd --> MCP
 ```
 
@@ -389,5 +391,7 @@ Three files describe how Claude should behave. They must always be consistent �
 | File | Purpose |
 |------|---------|
 | `src/skill/SKILL.md` | Used when Whyline is loaded as a Claude Code skill |
-| `how-to-run/CLAUDE.md.template` | Injected into user repos by `whyline install-claude` |
+| `how-to-run/CLAUDE.md.template` | Injected into user repos by `whyline install --tool claude` |
+| `how-to-run/cursor.md.template` | Injected into user repos by `whyline install --tool cursor` |
+| `docs/architecture.md` | System overview — commands, components, pipelines, directory structure |
 | Deployed `CLAUDE.md` files | Already-wired repos — patch manually after changes |

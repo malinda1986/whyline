@@ -43,23 +43,32 @@ Pay attention to:
 - compatibility concerns
 - previous decisions around the same files
 
-## Before committing
+## After you commit
 
-Summarize the coding session into a memory capsule:
+After `git commit` succeeds:
 
-- goal / intent
-- files changed
-- decision
-- why
-- alternatives rejected
-- risks
-- follow-ups
-- tags
+1. Synthesize from the conversation:
+   - What was the goal? → `intent`
+   - What was the key decision? → `decision`
+   - Why that decision (not another)? → `why`
+   - What alternatives were rejected? → `alternativesRejected`
+   - What risks exist? → `risks`
+   - What should be done next? → `followUps`
 
-Show the summary to the user before saving:
-_"Here's what I'm saving as a coding memory — let me know if you want to add or correct anything:"_
+2. Show the summary to the user:
+   _"Here's what I'm saving as a coding memory — let me know if you want to add or correct anything:"_
+   Then display each field clearly.
 
-Wait for the user to respond. If they add or correct something, apply it. Then call `save_coding_memory`.
+3. Wait for the user to respond. If they add or correct something, apply it.
+
+4. Call `save_coding_memory` with:
+   - `repoPath` — the absolute path to the git repository
+   - `commitSha` — the commit SHA (use HEAD)
+   - `files` — files changed in this session
+   - `source` — `"claude-code"` (or the tool name for other adapters)
+   - all synthesized fields above
+
+5. If the response contains a non-empty `warnings` array, show each warning to the user and offer to update the memory with richer detail.
 
 ## Memory quality rules
 

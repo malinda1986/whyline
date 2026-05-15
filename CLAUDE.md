@@ -2,7 +2,7 @@
 
 You are working on `whyline` — a local-first CLI + MCP server that stores AI coding-session reasoning in SQLite and exposes it to Claude Code.
 
-The MVP is complete. All 7 milestones are built and 160 tests pass.
+The MVP is complete. All 7 milestones are built and 193 tests pass.
 
 ## Build principles
 
