@@ -173,7 +173,7 @@ describe("doctor — git repo checks", () => {
 
     const { runDoctor } = await import("../src/commands/doctor.js");
     const { stdout } = await captureOutput(() => runDoctor());
-    expect(stdout).toMatch(/✗.*\.mcp\.json configured/);
+    expect(stdout).toMatch(/✗.*MCP config/);
   });
 
   it("detects valid .mcp.json with whyline server entry", async () => {
@@ -198,7 +198,7 @@ describe("doctor — git repo checks", () => {
 
     const { runDoctor } = await import("../src/commands/doctor.js");
     const { stdout } = await captureOutput(() => runDoctor());
-    expect(stdout).toMatch(/✓.*\.mcp\.json configured/);
+    expect(stdout).toMatch(/✓.*MCP config/);
   });
 
   it("detects CLAUDE.md that mentions Whyline", async () => {
@@ -223,7 +223,7 @@ describe("doctor — git repo checks", () => {
 
     const { runDoctor } = await import("../src/commands/doctor.js");
     const { stdout } = await captureOutput(() => runDoctor());
-    expect(stdout).toMatch(/✓.*CLAUDE\.md mentions Whyline/);
+    expect(stdout).toMatch(/✓.*Instruction file/);
   });
 
   it("detects CLAUDE.md that does not mention Whyline", async () => {
@@ -248,6 +248,60 @@ describe("doctor — git repo checks", () => {
 
     const { runDoctor } = await import("../src/commands/doctor.js");
     const { stdout } = await captureOutput(() => runDoctor());
-    expect(stdout).toMatch(/✗.*CLAUDE\.md mentions Whyline/);
+    expect(stdout).toMatch(/✗.*Instruction file/);
+  });
+});
+
+describe("doctor — Cursor detection", () => {
+  function makeTempRepo(): string {
+    return fs.mkdtempSync(path.join(os.tmpdir(), "whyline-doctor-cursor-"));
+  }
+
+  async function captureDoctor(dir: string): Promise<string> {
+    const dbPath = path.join(dir, "memory.db");
+    const db = (await import("../src/db/connection.js")).openDb(dbPath);
+    (await import("../src/db/migrations.js")).runMigrations(db);
+    db.close();
+
+    vi.resetModules();
+    vi.doMock("../src/config.js", () => ({
+      isInitialized: () => true,
+      resolveConfig: () => ({ storage: { dbPath } }),
+    }));
+    vi.doMock("../src/git/git.js", () => ({ getRepoRoot: () => dir }));
+    vi.doMock("child_process", async (orig: () => Promise<object>) => {
+      const actual = await orig();
+      return {
+        ...(actual as object),
+        execSync: (cmd: string) => {
+          if (cmd === "which whyline") return "/usr/local/bin/whyline\n";
+          throw new Error();
+        },
+      };
+    });
+
+    const { runDoctor } = await import("../src/commands/doctor.js");
+    const { stdout } = await captureOutput(() => runDoctor());
+    return stdout;
+  }
+
+  it("passes MCP config check when .cursor/mcp.json has whyline entry", async () => {
+    const dir = makeTempRepo();
+    const cursorDir = path.join(dir, ".cursor");
+    fs.mkdirSync(cursorDir);
+    fs.writeFileSync(
+      path.join(cursorDir, "mcp.json"),
+      JSON.stringify({ mcpServers: { whyline: { command: "whyline", args: ["mcp"] } } })
+    );
+    fs.writeFileSync(path.join(dir, ".cursorrules"), "## Whyline Memory\n");
+    const output = await captureDoctor(dir);
+    expect(output).toContain("✓  MCP config");
+    expect(output).toContain("✓  Instruction file");
+  });
+
+  it("fails MCP config check when neither .mcp.json nor .cursor/mcp.json has whyline entry", async () => {
+    const dir = makeTempRepo();
+    const output = await captureDoctor(dir);
+    expect(output).toContain("✗  MCP config");
   });
 });

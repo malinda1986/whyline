@@ -59,41 +59,50 @@ export async function runDoctor(): Promise<void> {
     repoRoot ?? "not a git repository — memories cannot be linked to commits"
   ));
 
-  // 5. .mcp.json configured
+  // 5 & 6. Detect configured tool and check its files
   if (repoRoot) {
-    const mcpJson = path.join(repoRoot, ".mcp.json");
-    let mcpOk = false;
-    let mcpDetail: string | undefined;
-    if (fs.existsSync(mcpJson)) {
-      try {
-        const raw = JSON.parse(fs.readFileSync(mcpJson, "utf-8")) as Record<string, unknown>;
-        const servers = (raw.mcpServers ?? {}) as Record<string, unknown>;
-        mcpOk = Object.keys(servers).some((k) => k.toLowerCase().includes("whyline"));
-        mcpDetail = mcpOk ? mcpJson : `${mcpJson} exists but no whyline server entry found`;
-      } catch {
-        mcpDetail = `${mcpJson} is not valid JSON`;
+    const { ClaudeAdapter } = await import("../adapters/claude.js");
+    const { CursorAdapter } = await import("../adapters/cursor.js");
+    const adapters = [new ClaudeAdapter(), new CursorAdapter()];
+
+    let detectedAdapter: import("../adapters/types.js").ToolAdapter | null = null;
+    for (const adapter of adapters) {
+      const configFile = path.join(repoRoot, adapter.configPath);
+      if (fs.existsSync(configFile)) {
+        try {
+          const raw = JSON.parse(fs.readFileSync(configFile, "utf-8")) as Record<string, unknown>;
+          const servers = (raw.mcpServers ?? {}) as Record<string, unknown>;
+          if (Object.keys(servers).some((k) => k.toLowerCase().includes("whyline"))) {
+            detectedAdapter = adapter;
+            break;
+          }
+        } catch { /* skip invalid JSON */ }
+      }
+    }
+
+    if (detectedAdapter) {
+      const configFile = path.join(repoRoot, detectedAdapter.configPath);
+      results.push(check("MCP config", true, configFile));
+
+      const instrFile = path.join(repoRoot, detectedAdapter.instructionPath);
+      if (fs.existsSync(instrFile)) {
+        const content = fs.readFileSync(instrFile, "utf-8");
+        const mentioned = /whyline/i.test(content);
+        results.push(check(
+          "Instruction file",
+          mentioned,
+          mentioned ? instrFile : `${instrFile} exists but does not mention Whyline`
+        ));
+      } else {
+        results.push(check("Instruction file", false, `${instrFile} not found`));
       }
     } else {
-      mcpDetail = `${mcpJson} not found — see how-to-run/02-wire-up-your-repo.md`;
-    }
-    results.push(check(".mcp.json configured", mcpOk, mcpDetail));
-
-    // 6. CLAUDE.md mentions Whyline
-    const claudeMd = path.join(repoRoot, "CLAUDE.md");
-    if (fs.existsSync(claudeMd)) {
-      const content = fs.readFileSync(claudeMd, "utf-8");
-      const mentioned = /whyline/i.test(content);
-      results.push(check(
-        "CLAUDE.md mentions Whyline",
-        mentioned,
-        mentioned ? claudeMd : `${claudeMd} exists but does not mention Whyline — see how-to-run/CLAUDE.md.template`
-      ));
-    } else {
-      results.push(check("CLAUDE.md mentions Whyline", false, `${claudeMd} not found`));
+      results.push(check("MCP config", false, "no tool configured — run `whyline install --tool <claude|cursor>`"));
+      results.push(check("Instruction file", false, "skipped — no tool configured"));
     }
   } else {
-    results.push(check(".mcp.json configured", false, "skipped — not in a git repo"));
-    results.push(check("CLAUDE.md mentions Whyline", false, "skipped — not in a git repo"));
+    results.push(check("MCP config", false, "skipped — not in a git repo"));
+    results.push(check("Instruction file", false, "skipped — not in a git repo"));
   }
 
   // 7. MCP server starts (quick smoke test)

@@ -34,6 +34,16 @@ program
   });
 
 program
+  .command("install")
+  .description("Create or update tool config files for this repo")
+  .option("--tool <name>", "Tool to configure: claude or cursor", "claude")
+  .option("--repo-path <path>", "Target repo path (defaults to current directory)")
+  .action(async (options: { tool: string; repoPath?: string }) => {
+    const { runInstall } = await import("./commands/install.js");
+    await runInstall(options);
+  });
+
+program
   .command("save")
   .description("Save a coding memory")
   .requiredOption("--commit <ref>", "Git commit ref")

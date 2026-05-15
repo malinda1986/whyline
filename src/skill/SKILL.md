@@ -24,6 +24,7 @@ Preserve and retrieve engineering reasoning across AI coding sessions.
 2. Quote the memory to the user verbatim: _"I found a previous memory about this: [decision + reason]. Before I proceed — what's the reason for changing it now?"_
 3. If the memory has `isStale: true`, add: _"Note: this memory is over 90 days old — verify it still applies before treating it as current."_
 4. Wait for the user to respond before doing anything else.
+5. Record the new reason when saving the updated memory.
 
 **If no memories come back**, say "No past memories found for this area" and then proceed normally.
 

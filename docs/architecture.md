@@ -326,6 +326,10 @@ The DB connection is opened and closed per request — no persistent connection.
 src/
   cli.ts                  entry point, commander, shebang
   config.ts               DATA_DIR, DB_PATH, resolveConfig(), isInitialized()
+  adapters/
+    types.ts              ToolAdapter interface + WriteResult type
+    claude.ts             Claude Code adapter (.mcp.json, CLAUDE.md, settings.local.json)
+    cursor.ts             Cursor adapter (.cursor/mcp.json, .cursorrules)
   commands/
     init.ts               create ~/.whyline/, run migrations
     save.ts               parse markdown → redact → save
@@ -339,7 +343,8 @@ src/
     import.ts             ingest JSON export, deduplicate, redact
     summarize.ts          improve memory fields via Claude API
     doctor.ts             7-check setup diagnostic, exits 1 on failure
-    install-claude.ts     create/update .mcp.json, CLAUDE.md, settings.local.json
+    install.ts            unified install --tool <claude|cursor>
+    install-claude.ts     backward-compat shim → install --tool claude
     mcp.ts                start MCP stdio server
   db/
     connection.ts         openDb() — WAL + foreign_keys
@@ -369,7 +374,8 @@ src/
     post-commit.sample.sh reminder hook template
 
 how-to-run/
-  CLAUDE.md.template      injected into user repos by install-claude (keep in sync with SKILL.md)
+  CLAUDE.md.template      injected into user repos by `whyline install --tool claude`
+  cursor.md.template      injected into user repos by `whyline install --tool cursor`
   01-install.md
   02-wire-up-your-repo.md
 ```

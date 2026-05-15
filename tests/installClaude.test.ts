@@ -155,3 +155,17 @@ describe("install-claude — error handling", () => {
     exitSpy.mockRestore();
   });
 });
+
+import { runInstall } from "../src/commands/install.js";
+
+describe("runInstall --tool claude", () => {
+  let repoDir: string;
+
+  beforeEach(() => { repoDir = makeGitDir(); });
+
+  it("creates .mcp.json and CLAUDE.md via unified install command", async () => {
+    await runInstall({ tool: "claude", repoPath: repoDir });
+    expect(fs.existsSync(path.join(repoDir, ".mcp.json"))).toBe(true);
+    expect(fs.existsSync(path.join(repoDir, "CLAUDE.md"))).toBe(true);
+  });
+});

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
 import { openDb } from "../src/db/connection.js";
 import { runMigrations } from "../src/db/migrations.js";
-import { saveMemory, getMemoryById, getMemoryByCommit, generateMemoryId, buildEmbeddingText } from "../src/memory/saveMemory.js";
+import { saveMemory, getMemoryById, getMemoryByCommit, generateMemoryId, buildEmbeddingText, deleteMemory, updateMemory } from "../src/memory/saveMemory.js";
 import type { CodingMemory } from "../src/memory/types.js";
 
 function makeTestDb(): Database.Database {
@@ -192,5 +192,129 @@ describe("buildEmbeddingText", () => {
     expect(text).toContain(memory.why);
     expect(text).toContain(memory.files[0]);
     expect(text).toContain(memory.tags[0]);
+  });
+});
+
+describe("deleteMemory", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = makeTestDb();
+  });
+
+  it("removes the memory row from memories", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    expect(getMemoryById(db, memory.id)).toBeNull();
+  });
+
+  it("cascades deletion to memory_files", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    const rows = db.prepare("SELECT * FROM memory_files WHERE memory_id = ?").all(memory.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("cascades deletion to memory_tags", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    const rows = db.prepare("SELECT * FROM memory_tags WHERE memory_id = ?").all(memory.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("cascades deletion to memory_alternatives", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    const rows = db.prepare("SELECT * FROM memory_alternatives WHERE memory_id = ?").all(memory.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("cascades deletion to memory_risks", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    const rows = db.prepare("SELECT * FROM memory_risks WHERE memory_id = ?").all(memory.id);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("cascades deletion to memory_followups", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    deleteMemory(db, memory.id);
+    const rows = db.prepare("SELECT * FROM memory_followups WHERE memory_id = ?").all(memory.id);
+    expect(rows).toHaveLength(0);
+  });
+});
+
+describe("updateMemory", () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = makeTestDb();
+  });
+
+  it("persists updated text fields", () => {
+    const memory = makeMemory();
+    saveMemory(db, memory);
+    updateMemory(db, memory.id, {
+      intent: "Updated intent",
+      summary: "Updated summary",
+      decision: "Updated decision",
+      why: "Updated why",
+      embeddingText: "Updated intent Updated decision",
+    });
+    const updated = getMemoryById(db, memory.id);
+    expect(updated?.intent).toBe("Updated intent");
+    expect(updated?.decision).toBe("Updated decision");
+    expect(updated?.why).toBe("Updated why");
+  });
+
+  it("advances updated_at timestamp", () => {
+    const memory = makeMemory({ updatedAt: "2020-01-01T00:00:00.000Z" });
+    saveMemory(db, memory);
+    updateMemory(db, memory.id, {
+      intent: memory.intent,
+      summary: memory.summary,
+      decision: memory.decision,
+      why: memory.why,
+      embeddingText: memory.embeddingText,
+    });
+    const updated = getMemoryById(db, memory.id);
+    expect(updated?.updatedAt).not.toBe("2020-01-01T00:00:00.000Z");
+  });
+
+  it("replaces tags when provided", () => {
+    const memory = makeMemory({ tags: ["old-tag"] });
+    saveMemory(db, memory);
+    updateMemory(db, memory.id, {
+      intent: memory.intent,
+      summary: memory.summary,
+      decision: memory.decision,
+      why: memory.why,
+      embeddingText: memory.embeddingText,
+      tags: ["new-tag-a", "new-tag-b"],
+    });
+    const updated = getMemoryById(db, memory.id);
+    expect(updated?.tags).toEqual(expect.arrayContaining(["new-tag-a", "new-tag-b"]));
+    expect(updated?.tags).not.toContain("old-tag");
+  });
+
+  it("replaces alternativesRejected when provided", () => {
+    const memory = makeMemory({ alternativesRejected: ["old-alt"] });
+    saveMemory(db, memory);
+    updateMemory(db, memory.id, {
+      intent: memory.intent,
+      summary: memory.summary,
+      decision: memory.decision,
+      why: memory.why,
+      embeddingText: memory.embeddingText,
+      alternativesRejected: ["new-alt"],
+    });
+    const updated = getMemoryById(db, memory.id);
+    expect(updated?.alternativesRejected).toEqual(["new-alt"]);
   });
 });

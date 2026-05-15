@@ -51,7 +51,8 @@ There are three files that describe how Claude should behave when working with m
 | File | Purpose |
 |------|---------|
 | `src/skill/SKILL.md` | Used when Whyline is loaded as a Claude Code skill |
-| `how-to-run/CLAUDE.md.template` | Injected into user repos by `whyline install-claude` |
+| `how-to-run/CLAUDE.md.template` | Injected into user repos by `whyline install --tool claude` |
+| `how-to-run/cursor.md.template` | Injected into user repos by `whyline install --tool cursor` |
 | `docs/architecture.md` | System overview — commands, components, pipelines, directory structure |
 | Deployed `CLAUDE.md` files (e.g. `/Users/malinda.ranasinghe/Documents/contentful/moi/audit-logging/CLAUDE.md`) | Already-wired repos that won't re-run `install-claude` |
 
@@ -70,5 +71,6 @@ Triggers that always require a sync:
 - New quality, staleness, or deduplication rules
 - Changes to what Claude should say when surfacing a memory
 - New CLI command added — update `docs/architecture.md` directory structure and component diagram
+- New tool adapter added (new `src/adapters/<tool>.ts`) — add instruction template to `how-to-run/`, update table above, update `docs/architecture.md`
 
 If you only update one file, future sessions in repos wired with the old template will behave differently from repos wired with the new one — the instructions will drift.
