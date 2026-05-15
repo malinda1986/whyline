@@ -126,3 +126,24 @@ p:last-child { margin-bottom: 0; }
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
+
+/* ── Problem ── */
+.problem {
+  background: var(--color-invert-bg);
+  color: var(--color-invert-text);
+  padding: 64px 0;
+  text-align: center;
+}
+.problem__inner { max-width: 600px; }
+.problem p {
+  color: #94a3b8;
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  margin-bottom: 16px;
+}
+.problem__callout {
+  color: var(--color-accent) !important;
+  font-size: 1.25rem !important;
+  font-weight: 600;
+  margin-top: 8px;
+}
