@@ -109,13 +109,13 @@ p:last-child { margin-bottom: 0; }
 }
 .btn--primary {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-bg);
   border: 2px solid var(--color-accent);
 }
 .btn--primary:hover {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-  color: #fff;
+  color: var(--color-bg);
 }
 .btn--outline {
   background: transparent;
@@ -134,7 +134,7 @@ p:last-child { margin-bottom: 0; }
   padding: 64px 0;
   text-align: center;
 }
-.problem__inner { max-width: 600px; }
+.problem__inner { max-width: 600px; margin: 0 auto; }
 .problem p {
   color: #94a3b8;
   font-size: 1.0625rem;
@@ -259,7 +259,7 @@ p:last-child { margin-bottom: 0; }
 
 /* Dark terminal block (doctor output) */
 .terminal-block {
-  background: #0f172a;
+  background: var(--color-invert-bg);
   border-radius: var(--radius);
   padding: 24px;
   font-family: var(--font-mono);
@@ -270,7 +270,7 @@ p:last-child { margin-bottom: 0; }
   margin-top: 32px;
 }
 .t-check  { color: #4ade80; }
-.t-success { color: #f8fafc; font-weight: 600; }
+.t-success { color: var(--color-invert-text); font-weight: 600; }
 
 /* ── Footer ── */
 .footer {
